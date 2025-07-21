@@ -1,6 +1,17 @@
-# CleanVote - DAO Governance Assistant
+# Clear Vote - DAO Governance Assistant
 
 A modern web application that helps users analyze DAO proposals using AI-powered insights and voting recommendations.
+
+## Deployment
+
+### Netlify Configuration
+
+When deploying to Netlify, use the following settings:
+
+- **Build command:** `npm run build`
+- **Publish directory:** `dist/public`
+
+The repository includes a `_redirects` file in the `client/public` directory that handles SPA routing, ensuring that your application's routes work correctly on Netlify.
 
 ## Features
 
