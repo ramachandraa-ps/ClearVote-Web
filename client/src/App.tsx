@@ -1,4 +1,4 @@
-import { Switch, Route } from "wouter";
+import { Switch, Route, Router } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -6,8 +6,9 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/theme-provider";
 import Home from "@/pages/home";
 import NotFound from "@/pages/not-found";
+import { useHashLocation } from "wouter/use-hash-location";
 
-function Router() {
+function AppRouter() {
   return (
     <Switch>
       <Route path="/" component={Home}/>
@@ -18,11 +19,13 @@ function Router() {
 
 function App() {
   return (
-    <ThemeProvider defaultTheme="dark" storageKey="dao-analyzer-theme">
+    <ThemeProvider defaultTheme="dark" storageKey="clear-vote-theme">
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
           <Toaster />
-          <Router />
+          <Router hook={useHashLocation}>
+            <AppRouter />
+          </Router>
         </TooltipProvider>
       </QueryClientProvider>
     </ThemeProvider>
