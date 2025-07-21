@@ -1,0 +1,7 @@
+# Required for AI analysis
+GEMINI_API_KEY=AIzaSyCxd8DzCzk70xZY1kVr_lZdj9Ns8VYK1co
+
+# Optional - for Firebase authentication
+VITE_FIREBASE_API_KEY=
+VITE_FIREBASE_PROJECT_ID=
+VITE_FIREBASE_APP_ID= 
