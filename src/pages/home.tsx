@@ -1,97 +1,43 @@
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Vote, History, Plus, Settings } from "lucide-react";
+import { Vote, History, Plus, Sparkles } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
-import ProposalInput from "@/components/proposal-input";
-import AnalysisResults from "@/components/analysis-results";
-import LoadingState from "@/components/loading-state";
-import ErrorState from "@/components/error-state";
-import HistoryPreview from "@/components/history-preview";
-import { useMutation, useQuery } from "@tanstack/react-query";
-import { apiRequest, queryClient } from "@/lib/queryClient";
-import type { AnalysisResponse } from "@shared/schema";
 
-type AppState = "input" | "loading" | "error" | "results";
-
-// Define the HistoryItem interface to match what's expected in HistoryPreview
-interface HistoryItem {
-  id: string;
-  title: string;
-  createdAt: string;
-}
+// Mock data for demonstration
+const mockHistory = [
+  { id: "1", title: "Proposal for Treasury Management", createdAt: "2023-10-15T12:00:00Z" },
+  { id: "2", title: "Community Fund Allocation", createdAt: "2023-10-10T14:30:00Z" },
+  { id: "3", title: "Governance Structure Update", createdAt: "2023-10-05T09:15:00Z" }
+];
 
 export default function Home() {
-  const [state, setState] = useState<AppState>("input");
   const [proposalContent, setProposalContent] = useState("");
-  const [analysisResult, setAnalysisResult] = useState<AnalysisResponse | null>(null);
-  const [errorMessage, setErrorMessage] = useState("");
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [showResults, setShowResults] = useState(false);
 
-  // Mock user ID for demo purposes - in real app this would come from auth
-  const userId = "demo-user-123";
-
-  const { data: historyData } = useQuery({
-    queryKey: ["/api/history", userId],
-    enabled: true
-  });
-
-  // Ensure history is always an array of HistoryItem
-  const history: HistoryItem[] = Array.isArray(historyData) ? historyData : [];
-
-  const analyzeMutation = useMutation({
-    mutationFn: async (content: string) => {
-      const response = await apiRequest("POST", "/api/analyze", {
-        content,
-        userId,
-        title: content.split('\n')[0].substring(0, 100) // Use first line as title
-      });
-      return response.json();
-    },
-    onSuccess: (data: AnalysisResponse) => {
-      setAnalysisResult(data);
-      setState("results");
-      queryClient.invalidateQueries({ queryKey: ["/api/history"] });
-    },
-    onError: (error: Error) => {
-      setErrorMessage(error.message);
-      setState("error");
-    }
-  });
-
-  const handleSummarize = () => {
+  const handleAnalyze = () => {
     if (!proposalContent.trim()) {
-      setErrorMessage("Please enter a proposal to analyze");
-      setState("error");
+      alert("Please enter a proposal to analyze");
       return;
     }
     
-    if (proposalContent.length > 5000) {
-      setErrorMessage("Proposal content must be less than 5000 characters");
-      setState("error");
-      return;
-    }
-
-    setState("loading");
-    analyzeMutation.mutate(proposalContent);
+    setIsAnalyzing(true);
+    
+    // Simulate API call
+    setTimeout(() => {
+      setIsAnalyzing(false);
+      setShowResults(true);
+    }, 2000);
   };
 
   const handleClear = () => {
     setProposalContent("");
-    setState("input");
-    setAnalysisResult(null);
-    setErrorMessage("");
+    setShowResults(false);
   };
 
-  const handleRetry = () => {
-    if (proposalContent.trim()) {
-      handleSummarize();
-    } else {
-      setState("input");
-    }
-  };
-
-  const scrollToTop = () => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+  const handleNewAnalysis = () => {
+    setShowResults(false);
   };
 
   return (
@@ -105,20 +51,12 @@ export default function Home() {
                 <Vote className="text-primary-foreground w-5 h-5" />
               </div>
               <div>
-                <h1 className="text-xl font-bold text-foreground">CleanVote</h1>
+                <h1 className="text-xl font-bold text-foreground">ClearVote</h1>
                 <p className="text-sm text-muted-foreground">DAO Governance Assistant</p>
               </div>
             </div>
             <div className="flex items-center space-x-2">
               <ThemeToggle />
-              <Button 
-                variant="ghost" 
-                size="sm"
-                onClick={() => setState("input")}
-                className="p-2 text-muted-foreground hover:text-foreground"
-              >
-                <History className="w-5 h-5" />
-              </Button>
             </div>
           </div>
         </div>
@@ -126,116 +64,172 @@ export default function Home() {
 
       <main className="max-w-6xl mx-auto px-4 py-6 pb-24">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Mobile: Show different layout */}
-          <div className="lg:hidden">
-            {state === "input" && (
-              <>
-                <ProposalInput
-                  content={proposalContent}
-                  onContentChange={setProposalContent}
-                  onSummarize={handleSummarize}
-                  onClear={handleClear}
-                />
-                <HistoryPreview history={history} />
-              </>
-            )}
+          {/* Left Column - Main Content */}
+          <div className="space-y-6">
+            {!isAnalyzing && !showResults ? (
+              <Card className="w-full">
+                <CardContent className="pt-6">
+                  <div className="mb-4">
+                    <h2 className="text-lg font-semibold text-foreground">Paste DAO Proposal</h2>
+                    <p className="text-sm text-muted-foreground">
+                      Paste your proposal text below to get an AI-powered analysis
+                    </p>
+                  </div>
+                  <div className="relative">
+                    <textarea
+                      value={proposalContent}
+                      onChange={(e) => setProposalContent(e.target.value)}
+                      className="w-full min-h-[200px] p-3 text-sm border border-border rounded-md bg-background text-foreground resize-y"
+                      placeholder="Paste your proposal text here..."
+                    />
+                    {proposalContent && (
+                      <button
+                        onClick={handleClear}
+                        className="absolute top-2 right-2 p-1 rounded-full bg-background hover:bg-muted"
+                        aria-label="Clear input"
+                      >
+                        <Plus className="h-4 w-4 text-muted-foreground rotate-45" />
+                      </button>
+                    )}
+                  </div>
+                  <div className="flex justify-end mt-4">
+                    <Button onClick={handleAnalyze} className="flex items-center gap-2">
+                      <Sparkles className="h-4 w-4" />
+                      Analyze
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ) : isAnalyzing ? (
+              <Card className="w-full">
+                <CardContent className="pt-6 flex flex-col items-center justify-center min-h-[200px]">
+                  <div className="animate-spin h-10 w-10 border-4 border-primary border-t-transparent rounded-full mb-4"></div>
+                  <p className="text-muted-foreground">Analyzing proposal...</p>
+                </CardContent>
+              </Card>
+            ) : (
+              <Card className="w-full">
+                <CardContent className="pt-6">
+                  <div className="flex items-center gap-2 mb-4">
+                    <div className="h-6 w-6 text-green-500">✓</div>
+                    <h2 className="text-lg font-semibold text-foreground">
+                      Recommended to Vote YES
+                    </h2>
+                  </div>
 
-            {state === "loading" && <LoadingState />}
+                  <div className="mb-6">
+                    <h3 className="text-md font-medium mb-2">Summary</h3>
+                    <p className="text-sm text-muted-foreground">
+                      This proposal outlines a comprehensive plan for treasury management that includes 
+                      diversification of assets, improved transparency measures, and regular reporting.
+                      The proposal is well-structured with clear implementation steps.
+                    </p>
+                  </div>
 
-            {state === "error" && (
-              <ErrorState 
-                message={errorMessage}
-                onRetry={handleRetry}
-              />
-            )}
+                  <div className="mb-6">
+                    <h3 className="text-md font-medium mb-2">Key Details</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div className="flex items-start gap-2 p-3 bg-accent/10 rounded-md">
+                        <div className="text-lg">💰</div>
+                        <div>
+                          <p className="text-xs font-medium">Budget Impact</p>
+                          <p className="text-sm">Low (5% of treasury)</p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-2 p-3 bg-accent/10 rounded-md">
+                        <div className="text-lg">⏱️</div>
+                        <div>
+                          <p className="text-xs font-medium">Duration</p>
+                          <p className="text-sm">6 months</p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-2 p-3 bg-accent/10 rounded-md">
+                        <div className="text-lg">⚠️</div>
+                        <div>
+                          <p className="text-xs font-medium">Risk Level</p>
+                          <p className="text-sm">Low</p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-2 p-3 bg-accent/10 rounded-md">
+                        <div className="text-lg">📋</div>
+                        <div>
+                          <p className="text-xs font-medium">Category</p>
+                          <p className="text-sm">Treasury</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
 
-            {state === "results" && analysisResult && (
-              <>
-                <AnalysisResults 
-                  result={analysisResult}
-                  onNewAnalysis={() => setState("input")}
-                />
-                <HistoryPreview history={history} />
-              </>
-            )}
-          </div>
-
-          {/* Desktop: Side-by-side layout */}
-          <div className="hidden lg:block space-y-6">
-            {state === "input" && (
-              <ProposalInput
-                content={proposalContent}
-                onContentChange={setProposalContent}
-                onSummarize={handleSummarize}
-                onClear={handleClear}
-              />
-            )}
-
-            {state === "loading" && <LoadingState />}
-
-            {state === "error" && (
-              <ErrorState 
-                message={errorMessage}
-                onRetry={handleRetry}
-              />
-            )}
-
-            {state === "results" && analysisResult && (
-              <AnalysisResults 
-                result={analysisResult}
-                onNewAnalysis={() => setState("input")}
-              />
+                  <div className="flex justify-end mt-6">
+                    <Button onClick={handleNewAnalysis} className="flex items-center gap-1">
+                      <Plus className="h-4 w-4" />
+                      New Analysis
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
             )}
           </div>
 
           {/* Right Column - History & Info */}
-          <div className="hidden lg:block space-y-6">
-            <HistoryPreview history={history} />
+          <div className="space-y-6">
+            <Card className="w-full">
+              <CardContent className="pt-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <History className="h-5 w-5 text-muted-foreground" />
+                  <h3 className="text-lg font-semibold text-foreground">Recent Analyses</h3>
+                </div>
+                <div className="space-y-3">
+                  {mockHistory.map((item) => (
+                    <div
+                      key={item.id}
+                      className="p-3 border border-border rounded-md hover:bg-accent/10 cursor-pointer"
+                    >
+                      <p className="font-medium text-sm text-foreground truncate">{item.title}</p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {new Date(item.createdAt).toLocaleDateString()}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
             
             {/* Info Panel */}
-            <div className="bg-card rounded-xl border border-border p-6">
-              <h3 className="text-lg font-semibold text-foreground mb-4">How to Use CleanVote</h3>
-              <div className="space-y-3 text-sm text-muted-foreground">
-                <div className="flex items-start space-x-3">
-                  <div className="w-6 h-6 bg-primary/20 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <span className="text-primary text-xs font-bold">1</span>
+            <Card className="w-full">
+              <CardContent className="pt-6">
+                <h3 className="text-lg font-semibold text-foreground mb-4">How to Use ClearVote</h3>
+                <div className="space-y-3 text-sm text-muted-foreground">
+                  <div className="flex items-start space-x-3">
+                    <div className="w-6 h-6 bg-primary/20 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <span className="text-primary text-xs font-bold">1</span>
+                    </div>
+                    <p>Paste your DAO proposal text into the input area</p>
                   </div>
-                  <p>Paste your DAO proposal text into the input area</p>
-                </div>
-                <div className="flex items-start space-x-3">
-                  <div className="w-6 h-6 bg-primary/20 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <span className="text-primary text-xs font-bold">2</span>
+                  <div className="flex items-start space-x-3">
+                    <div className="w-6 h-6 bg-primary/20 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <span className="text-primary text-xs font-bold">2</span>
+                    </div>
+                    <p>Click "Analyze" to get AI-powered analysis</p>
                   </div>
-                  <p>Click "Summarize" to get AI-powered analysis</p>
-                </div>
-                <div className="flex items-start space-x-3">
-                  <div className="w-6 h-6 bg-primary/20 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <span className="text-primary text-xs font-bold">3</span>
+                  <div className="flex items-start space-x-3">
+                    <div className="w-6 h-6 bg-primary/20 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <span className="text-primary text-xs font-bold">3</span>
+                    </div>
+                    <p>Review the voting recommendation and key details</p>
                   </div>
-                  <p>Review the voting recommendation and key details</p>
-                </div>
-                <div className="flex items-start space-x-3">
-                  <div className="w-6 h-6 bg-primary/20 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <span className="text-primary text-xs font-bold">4</span>
+                  <div className="flex items-start space-x-3">
+                    <div className="w-6 h-6 bg-primary/20 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <span className="text-primary text-xs font-bold">4</span>
+                    </div>
+                    <p>Share or save the analysis for future reference</p>
                   </div>
-                  <p>Share or save the analysis for future reference</p>
                 </div>
-              </div>
-            </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </main>
-
-      {/* Floating Action Button - Only show on mobile */}
-      <div className="fixed bottom-6 right-6 lg:hidden">
-        <Button
-          onClick={state === "results" ? () => setState("input") : scrollToTop}
-          className="w-14 h-14 bg-primary text-primary-foreground rounded-full shadow-lg hover:bg-primary/90 transition-all duration-200"
-          size="sm"
-        >
-          <Plus className="w-6 h-6" />
-        </Button>
-      </div>
     </div>
   );
 } 
